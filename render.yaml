@@ -1,0 +1,17 @@
+services:
+  # Web服务
+  - type: web
+    name: video-downloader
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: FLASK_ENV
+        value: production
+      - key: FFMPEG_PATH
+        value: /usr/bin
+    autoDeploy: true
+    healthCheckPath: / 

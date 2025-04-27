@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+    <style>
+        :root {
+            --primary-color: #0071e3;
+            --secondary-color: #48a9fe;
+            --accent-color: #4f46e5;
+            --gradient-start: #4361ee;
+            --gradient-end: #3f37c9;
+            --success-color: #34c759;
+            --error-color: #ff3b30;
+            --background-color: #f5f5f7;
+            --card-background: #ffffff;
+            --text-color: #1d1d1f;
+            --text-secondary: #86868b;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.47059;
+            font-weight: 400;
+            letter-spacing: -0.022em;
+        }
+
+        /* 页眉样式 */
+        .main-header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            background-size: 200% 200%;
+            padding: 15px 0;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin-bottom: 30px;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        /* 渐变背景动画 */
+        @keyframes gradientAnimation { 
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        /* 图标脉动动画 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* 页面载入动画 */
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .main-header .language-selector {
+            text-align: right;
+            margin: 0;
+        }
+
+        .main-header #language-select {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='12' height='12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L1 4h10z' fill='%23ffffff'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        .main-header #language-select:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .main-header #language-select option {
+            background-color: #fff;
+            color: #333;
+        }
+
+        /* 容器样式修改 */
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeIn 0.7s ease-in;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .main-header .language-selector {
+                width: 100%;
+                text-align: center;
+                margin-top: 10px;
+            }
+            
+            .container {
+                margin-top: 20px;
+            }
+        }
+
+        .download-form {
+            background: var(--card-background);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+            transition: var(--transition);
+            border: 1px solid #e6e6e6;
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 2.3rem;
+            margin-bottom: 1.8rem;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(0, 125, 250, 0.15);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 12px 22px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            text-transform: none;
+            letter-spacing: -0.01em;
+        }
+
+        .download-btn-mp4 {
+            background: var(--primary-color);
+            color: white;
+            flex: 1;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn-mp3 {
+            background: #424245;
+            color: white;
+            flex: 1;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            opacity: 0.9;
+        }
+
+        /* 进度条样式优化 */
+        #progress-bar {
+            margin: 25px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 18px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e6e6e6;
+        }
+
+        #progress-inner {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            border-radius: 14px;
+            height: 24px;
+            line-height: 24px;
+            transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            font-weight: 500;
+            font-size: 0.85rem;
+            min-width: 40px;
+            box-shadow: 0 3px 10px rgba(0, 113, 227, 0.2);
+        }
+
+        #progress-message {
+            margin-top: 12px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* 文件列表样式优化 */
+        .files-container {
+            background: var(--card-background);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 40px;
+            border: 1px solid #e6e6e6;
+        }
+
+        .files-container h2 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .file-list {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .file-list th {
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 12px 15px;
+            text-transform: none;
+            font-size: 0.85rem;
+            letter-spacing: -0.01em;
+            text-align: left;
+        }
+
+        .file-list td {
+            background: #f5f5f7;
+            padding: 15px;
+            transition: var(--transition);
+            border-top: 1px solid #e6e6e6;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .file-list td:first-child {
+            border-left: 1px solid #e6e6e6;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        .file-list td:last-child {
+            border-right: 1px solid #e6e6e6;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .file-list tr:hover td {
+            background: #f0f0f5;
+        }
+
+        .download-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 18px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .delete-btn {
+            background: #8e8e93;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 18px;
+            margin-left: 8px;
+            font-size: 0.85rem;
+        }
+
+        .download-btn:hover, .delete-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* 语言选择器 */
+        .language-selector {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        #language-select {
+            padding: 8px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            background-color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='12' height='12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L1 4h10z' fill='%2386868b'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        #language-select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+        }
+
+        /* 页脚样式 */
+        .footer {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            padding: 30px 0 15px;
+            margin-top: 50px;
+            border-top: 1px solid #d2d2d7;
+            font-size: 0.9rem;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 0 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .footer-section {
+            flex: 1;
+            min-width: 200px;
+            margin: 0 10px 25px;
+        }
+
+        .footer-section h3 {
+            color: #1d1d1f;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .footer-section h3:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 30px;
+            height: 1px;
+            background: #86868b;
+        }
+
+        .footer-section p {
+            color: #515154;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section a {
+            color: #515154;
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 0.85rem;
+        }
+
+        .footer-section a:hover {
+            color: #0071e3;
+            text-decoration: underline;
+        }
+
+        .contact span {
+            display: block;
+            margin-bottom: 8px;
+            color: #515154;
+            font-size: 0.85rem;
+        }
+
+        .footer-button {
+            background: #0071e3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 980px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: none;
+        }
+
+        .footer-button:hover {
+            background: #0077ed;
+            transform: translateY(-1px);
+        }
+
+        .footer-bottom {
+            background: #f2f2f7;
+            text-align: center;
+            padding: 15px 0;
+            color: #86868b;
+            font-size: 0.8rem;
+            border-top: 1px solid #d2d2d7;
+        }
+
+        /* 状态消息样式 */
+        .error, .success {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 400;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .error {
+            background-color: rgba(255, 59, 48, 0.08);
+            color: var(--error-color);
+        }
+
+        .success {
+            background-color: rgba(52, 199, 89, 0.08);
+            color: var(--success-color);
+        }
+
+        .no-files {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            background: #f5f5f7;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        /* 新增加载动画 */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-secondary);
+        }
+
+        /* 视觉动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .download-form, .files-container {
+                padding: 1.8rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* 联系表单样式 */
+        .contact-form-container {
+            background: var(--card-background);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 40px;
+            margin-top: 40px;
+        }
+
+        .contact-form-container h2 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-align: center;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .contact-form input[type="email"],
+        .contact-form textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .contact-form input[type="email"]:focus,
+        .contact-form textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(0, 125, 250, 0.15);
+        }
+
+        .contact-submit {
+            background: var(--primary-color);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .contact-submit:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .contact-result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.95rem;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .contact-success {
+            background-color: rgba(52, 199, 89, 0.1);
+            color: var(--success-color);
+            display: block;
+        }
+
+        .contact-error {
+            background-color: rgba(255, 59, 48, 0.1);
+            color: var(--error-color);
+            display: block;
+        }
+
+        /* 模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            display: block;
+        }
+
+        .modal-content {
+            background: var(--card-background);
+            margin: 5% auto;
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 90%;
+            max-width: 600px;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--primary-color);
+        }
+
+        .contact-link {
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: 500;
+            color: var(--primary-color) !important;
+            text-decoration: none;
+        }
+
+        /* 平台快捷方式样式 */
+        .platform-shortcuts {
+            margin: 15px 0 10px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .platform-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-right: 5px;
+        }
+
+        .platform-btn {
+            background: #f5f5f7;
+            border: 1px solid #e6e6e6;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .platform-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .platform-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .download-form, .files-container {
+                padding: 1.8rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .platform-shortcuts {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .platform-label {
+                margin-bottom: 5px;
+            }
+        }
+
+        .deleting-status {
+            display: inline-block;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            background: #f5f5f7;
+            border-radius: 18px;
+            font-size: 0.85rem;
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加新的页眉设计 -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-container">
+                <div class="logo">
+                    <span class="logo-icon">⬇</span>
+                    <span class="logo-text">Video Downloader</span>
+                </div>
+            </div>
+            <div class="language-selector">
+                <select id="language-select" onchange="changeLanguage(this.value)">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <audio id="notify-audio" src="/static/notify.mp3" preload="auto"></audio>
+    <div class="container">
+        <h1>Video Downloader</h1>
+        <div class="download-form">
+            <form id="downloadForm">
+                <input type="text" name="url" placeholder="Enter video URL (YouTube, Bilibili, TikTok, Facebook, etc.)" required>
+                <div class="platform-shortcuts">
+                    <span class="platform-label">Popular Platforms:</span>
+                    <button type="button" class="platform-btn" data-platform="youtube">YouTube</button>
+                    <button type="button" class="platform-btn" data-platform="bilibili">Bilibili</button>
+                    <button type="button" class="platform-btn" data-platform="tiktok">TikTok</button>
+                    <button type="button" class="platform-btn" data-platform="twitter">Twitter</button>
+                </div>
+                <br>
+                <div class="button-group">
+                    <button type="button" onclick="downloadContent('mp4')" class="download-btn-mp4">Download Video (MP4)</button>
+                    <button type="button" onclick="downloadContent('mp3')" class="download-btn-mp3">Download Audio (MP3)</button>
+                </div>
+            </form>
+            <div id="result"></div>
+            <div class="loading">Downloading...</div>
+            <div id="progress-bar" style="display: none;">
+                <div id="progress-inner" style="width: 0%;">0%</div>
+                <div id="progress-message"></div>
+            </div>
+        </div>
+
+        <div class="files-container">
+            <h2>Downloaded Files</h2>
+            {% if files %}
+            <table class="file-list">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fileList">
+                    {% for file in files %}
+                    <tr id="file-{{ file.name }}">
+                        <td>{{ file.name }}</td>
+                        <td>{{ file.size }}</td>
+                        <td>
+                            <a href="/download_file/{{ file.name }}" class="download-btn">Download</a>
+                            <button class="delete-btn" onclick="deleteFile('{{ file.name }}')">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-files">No files downloaded yet</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="contact-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="contact-title">Contact Us</h2>
+            <div class="contact-form">
+                <div class="form-group">
+                    <label for="contact-email-input" id="email-label">Your Contact Email</label>
+                    <input type="email" id="contact-email-input" placeholder="example@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact-message" id="message-label">Message or Feedback</label>
+                    <textarea id="contact-message" rows="6" placeholder="Please enter your questions or suggestions..." required></textarea>
+                </div>
+                <button id="send-contact" class="contact-submit">Send</button>
+                <div id="contact-result" class="contact-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section about">
+                <h3>视频下载器</h3>
+                <p>
+                    简单高效的视频下载工具，支持多种平台，轻松获取您喜爱的视频内容。
+                </p>
+                <div class="contact">
+                    <p style="font-size: 1.02rem; color: #515154;">kefu6944@gmail.com</p>
+                </div>
+            </div>
+
+            <div class="footer-section links">
+                <h3 id="quick-links-title">快速链接</h3>
+                <ul>
+                    <li><a href="#" id="home-link">首页</a></li>
+                    <li><a href="#" id="privacy-link">隐私政策</a></li>
+                    <li><a href="#" id="terms-link">使用条款</a></li>
+                    <li><a href="#" id="faq-link">常见问题</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section contact-form">
+                <h3 id="feedback-title">联系我们</h3>
+                <p id="feedback-desc">
+                    有任何问题或建议？我们很乐意听取您的反馈。
+                </p>
+                <button id="contact-us-link" class="footer-button">发送反馈</button>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2023</span> 视频下载器 | 版权所有</p>
+        </div>
+    </footer>
+
+    <script>
+        let progressTimer = null;
+
+        function pollProgress() {
+            fetch('/progress')
+            .then(response => response.json())
+            .then(data => {
+                const bar = document.getElementById('progress-bar');
+                const inner = document.getElementById('progress-inner');
+                const msg = document.getElementById('progress-message');
+                
+                if (data.status === 'downloading') {
+                    bar.style.display = 'block'; // 确保进度条显示
+                    
+                    // 解析百分比
+                    let percent = data.percent ? data.percent.replace(/[^\d.]/g, '') : '0';
+                    if (percent === '' || isNaN(percent)) percent = '0';
+                    percent = Math.max(0, Math.min(100, parseFloat(percent)));
+                    
+                    // 设置进度条宽度和文本
+                    inner.style.width = percent + '%';
+                    inner.textContent = percent + '%';
+                    
+                    // 添加额外信息：下载速度和预计剩余时间
+                    let extraInfo = '';
+                    if (data.speed) {
+                        extraInfo += `速度: ${data.speed}`;
+                    }
+                    if (data.eta) {
+                        extraInfo += extraInfo ? ` • 剩余时间: ${data.eta}` : `剩余时间: ${data.eta}`;
+                    }
+                    
+                    // 文件名和额外信息
+                    msg.textContent = (data.message || '') + (extraInfo ? ` (${extraInfo})` : '');
+                    
+                    progressTimer = setTimeout(pollProgress, 500);
+                } else if (data.status === 'finished') {
+                    bar.style.display = 'block'; // 确保显示100%
+                    inner.style.width = '100%';
+                    inner.textContent = '100%';
+                    msg.textContent = translations[currentLang]['downloadFinished'];
+                    setTimeout(() => { bar.style.display = 'none'; }, 1500);
+                } else if (data.status === 'error') {
+                    msg.textContent = translations[currentLang]['downloadError'];
+                    bar.style.display = 'none';
+                } else {
+                    bar.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error polling progress:', error);
+                // 在出错时继续尝试，防止一次网络错误导致进度条停止更新
+                progressTimer = setTimeout(pollProgress, 1000);
+            });
+        }
+
+        function downloadContent(format) {
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.querySelector('.loading');
+            const url = document.querySelector('input[name="url"]').value.trim();
+            const progressBar = document.getElementById('progress-bar');
+            const progressInner = document.getElementById('progress-inner');
+            const progressMessage = document.getElementById('progress-message');
+
+            if (!url) {
+                resultDiv.innerHTML = `<div class="error">${translations[currentLang]['enterUrl']}</div>`;
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            // 重置并显示进度条
+            progressBar.style.display = 'block';
+            progressInner.style.width = '0%';
+            progressInner.textContent = '0%';
+            progressMessage.textContent = translations[currentLang]['downloadingMsg'];
+            
+            if (progressTimer) clearTimeout(progressTimer);
+            pollProgress();
+
+            fetch('/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `url=${encodeURIComponent(url)}&format=${format}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                if (progressTimer) clearTimeout(progressTimer);
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="success">${data.message}</div>`;
+                    var audio = document.getElementById('notify-audio');
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => {
+                            console.log('Audio play error:', e);
+                        });
+                    }
+                    if (data.file) {
+                        const tbody = document.getElementById('fileList');
+                        if (tbody) {
+                            const row = document.createElement('tr');
+                            row.id = `file-${data.file.name}`;
+                            row.innerHTML = `
+                                <td>${data.file.name}</td>
+                                <td>${data.file.size}</td>
+                                <td>
+                                    <a href="/download_file/${data.file.name}" class="download-btn">Download</a>
+                                    <button class="delete-btn" onclick="deleteFile('${data.file.name}')">Delete</button>
+                                </td>
+                            `;
+                            tbody.insertBefore(row, tbody.firstChild);
+                        }
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                if (progressTimer) clearTimeout(progressTimer);
+                resultDiv.innerHTML = `<div class="error">Error: ${error}</div>`;
+            });
+        }
+
+        function deleteFile(filename) {
+            if (confirm(translations[currentLang]['deleteConfirm'])) {
+                // 显示删除中状态
+                const actionCell = document.querySelector(`#file-${CSS.escape(filename)} td:last-child`);
+                const originalContent = actionCell.innerHTML;
+                actionCell.innerHTML = `<span class="deleting-status">${translations[currentLang]['deleting']}...</span>`;
+                
+                fetch(`/delete/${encodeURIComponent(filename)}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const element = document.getElementById(`file-${CSS.escape(filename)}`);
+                        if (element) {
+                            // 添加动画效果
+                            element.style.transition = 'all 0.3s';
+                            element.style.opacity = '0';
+                            element.style.height = '0';
+                            
+                            // 动画完成后移除元素
+                            setTimeout(() => {
+                                element.remove();
+                                
+                                // 检查文件列表是否为空
+                                const tbody = document.getElementById('fileList');
+                                if (tbody && (!tbody.children || tbody.children.length === 0)) {
+                                    const filesContainer = document.querySelector('.files-container');
+                                    if (filesContainer) {
+                                        filesContainer.innerHTML = `
+                                            <h2>${translations[currentLang]['filesTitle']}</h2>
+                                            <div class="no-files">
+                                                ${translations[currentLang]['noFiles']}
+                                            </div>
+                                        `;
+                                    }
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        // 恢复原始内容并显示错误
+                        actionCell.innerHTML = originalContent;
+                        // 显示友好的错误消息
+                        const resultDiv = document.getElementById('result');
+                        if (resultDiv) {
+                            const errorMsg = data.message === 'File does not exist' 
+                                ? translations[currentLang]['fileNotExist'] 
+                                : translations[currentLang]['deleteFailed'] + data.message;
+                            resultDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+                            // 滚动到错误消息
+                            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                })
+                .catch(error => {
+                    // 恢复原始内容并显示错误
+                    actionCell.innerHTML = originalContent;
+                    const resultDiv = document.getElementById('result');
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `<div class="error">${translations[currentLang]['deleteError']} ${error}</div>`;
+                        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+        }
+
+        // 多语言配置
+        const translations = {
+            'en': {
+                'title': 'Video Downloader',
+                'placeholder': 'Enter video URL (YouTube, Bilibili, TikTok, Facebook, etc.)',
+                'downloadVideoBtn': 'Download Video (MP4)',
+                'downloadAudioBtn': 'Download Audio (MP3)',
+                'downloadingMsg': 'Downloading...',
+                'downloadFinished': 'Download finished!',
+                'downloadError': 'Download error!',
+                'filesTitle': 'Downloaded Files',
+                'fileName': 'File Name',
+                'fileSize': 'Size',
+                'fileActions': 'Actions',
+                'downloadBtn': 'Download',
+                'deleteBtn': 'Delete',
+                'noFiles': 'No files downloaded yet',
+                'enterUrl': 'Please enter a URL',
+                'deleteConfirm': 'Are you sure you want to delete this file?',
+                'deleteFailed': 'Delete failed: ',
+                'deleteError': 'Error deleting file: ',
+                'contactUs': 'Contact Us',
+                'yourEmail': 'Your contact email',
+                'messageOrFeedback': 'Message or feedback',
+                'sendContact': 'Send',
+                'sending': 'Sending...',
+                'contactSuccess': 'Message sent successfully. We will reply to you as soon as possible!',
+                'contactError': 'Send failed: ',
+                'contactServerError': 'Server error, please try again later',
+                'contactFieldsRequired': 'Please fill in all required fields',
+                'invalidEmail': 'Please enter a valid email address',
+                'quickLinks': 'Quick Links',
+                'privacyPolicy': 'Privacy Policy',
+                'termsOfUse': 'Terms of Use',
+                'faq': 'FAQ',
+                'appName': 'Video Downloader',
+                'appDescription': 'Simple and efficient video download tool, supporting multiple platforms',
+                'contactLink': 'Send Feedback',
+                'footerRights': 'All Rights Reserved',
+                'popularPlatforms': 'Popular Platforms:',
+                'homeLink': 'Home',
+                'privacyPolicy': 'Privacy Policy',
+                'termsOfUse': 'Terms of Use',
+                'faqText': 'FAQ',
+                'feedbackDesc': 'Questions or suggestions? We\'d love to hear from you.',
+                'fileNotExist': 'The file no longer exists or has been deleted',
+                'deleting': 'Deleting',
+            },
+            'zh': {
+                'title': '视频下载器',
+                'placeholder': '输入视频链接（支持优酷、哔哩哔哩、抖音、YouTube等）',
+                'downloadVideoBtn': '下载视频 (MP4)',
+                'downloadAudioBtn': '下载音频 (MP3)',
+                'downloadingMsg': '正在下载...',
+                'downloadFinished': '下载完成！',
+                'downloadError': '下载出错！',
+                'filesTitle': '已下载文件',
+                'fileName': '文件名',
+                'fileSize': '大小',
+                'fileActions': '操作',
+                'downloadBtn': '下载',
+                'deleteBtn': '删除',
+                'noFiles': '暂无已下载文件',
+                'enterUrl': '请输入URL',
+                'deleteConfirm': '确定要删除此文件吗？',
+                'deleteFailed': '删除失败: ',
+                'deleteError': '删除文件时发生错误: ',
+                'contactUs': '联系我们',
+                'yourEmail': '您的联系邮箱',
+                'messageOrFeedback': '消息或问题反馈',
+                'sendContact': '发送',
+                'sending': '发送中...',
+                'contactSuccess': '消息已成功发送，我们会尽快回复您！',
+                'contactError': '发送失败: ',
+                'contactServerError': '服务器错误，请稍后再试',
+                'contactFieldsRequired': '请填写所有必填字段',
+                'invalidEmail': '请输入有效的电子邮件地址',
+                'quickLinks': '快速链接',
+                'privacyPolicy': '隐私政策',
+                'termsOfUse': '使用条款',
+                'faq': '常见问题',
+                'appName': '视频下载器',
+                'appDescription': '简单高效的视频下载工具，支持多种平台',
+                'contactLink': '发送反馈',
+                'footerRights': '保留所有权利',
+                'popularPlatforms': '热门平台:',
+                'homeLink': '首页',
+                'privacyPolicy': '隐私政策',
+                'termsOfUse': '使用条款',
+                'faqText': '常见问题',
+                'feedbackDesc': '有任何问题或建议？我们很乐意听取您的反馈。',
+                'fileNotExist': '文件不存在或已被删除',
+                'deleting': '删除中',
+            },
+            'ja': {
+                'title': '動画ダウンローダー',
+                'placeholder': '動画のURLを入力してください（YouTube、ビリビリ、TikTok、Facebookなど）',
+                'downloadVideoBtn': '動画をダウンロード (MP4)',
+                'downloadAudioBtn': '音声をダウンロード (MP3)',
+                'downloadingMsg': 'ダウンロード中...',
+                'downloadFinished': 'ダウンロード完了！',
+                'downloadError': 'ダウンロードエラー！',
+                'filesTitle': 'ダウンロード済みファイル',
+                'fileName': 'ファイル名',
+                'fileSize': 'サイズ',
+                'fileActions': '操作',
+                'downloadBtn': 'ダウンロード',
+                'deleteBtn': '削除',
+                'noFiles': 'まだダウンロードしたファイルはありません',
+                'enterUrl': 'URLを入力してください',
+                'deleteConfirm': 'このファイルを削除してもよろしいですか？',
+                'deleteFailed': '削除に失敗しました: ',
+                'deleteError': 'ファイル削除中にエラーが発生しました: ',
+                'contactUs': 'お問い合わせ',
+                'yourEmail': 'あなたのメールアドレス',
+                'messageOrFeedback': 'メッセージまたはフィードバック',
+                'sendContact': '送信',
+                'sending': '送信中...',
+                'contactSuccess': 'メッセージが正常に送信されました。できるだけ早くご返信いたします！',
+                'contactError': '送信に失敗しました: ',
+                'contactServerError': 'サーバーエラー、後でもう一度お試しください',
+                'contactFieldsRequired': '必須フィールドをすべて入力してください',
+                'invalidEmail': '有効なメールアドレスを入力してください',
+                'quickLinks': 'クイックリンク',
+                'privacyPolicy': 'プライバシーポリシー',
+                'termsOfUse': '利用規約',
+                'faq': 'よくある質問',
+                'appName': '動画ダウンローダー',
+                'appDescription': 'シンプルで効率的な動画ダウンロードツール、複数のプラットフォームをサポート',
+                'contactLink': 'フィードバックを送信',
+                'footerRights': '無断複写·転載を禁じます',
+                'popularPlatforms': '人気のプラットフォーム:',
+                'homeLink': 'ホーム',
+                'privacyPolicy': 'プライバシーポリシー',
+                'termsOfUse': '利用規約',
+                'faqText': 'よくある質問',
+                'feedbackDesc': 'ご質問やご提案がありますか？お聞かせください。',
+                'fileNotExist': 'ファイルが存在しないか、削除されています',
+                'deleting': '削除中',
+            },
+            'ko': {
+                'title': '비디오 다운로더',
+                'placeholder': '비디오 URL을 입력하세요 (YouTube, Bilibili, TikTok, Facebook 등)',
+                'downloadVideoBtn': '비디오 다운로드 (MP4)',
+                'downloadAudioBtn': '오디오 다운로드 (MP3)',
+                'downloadingMsg': '다운로드 중...',
+                'downloadFinished': '다운로드 완료!',
+                'downloadError': '다운로드 오류!',
+                'filesTitle': '다운로드된 파일',
+                'fileName': '파일 이름',
+                'fileSize': '크기',
+                'fileActions': '작업',
+                'downloadBtn': '다운로드',
+                'deleteBtn': '삭제',
+                'noFiles': '아직 다운로드된 파일이 없습니다',
+                'enterUrl': 'URL을 입력하세요',
+                'deleteConfirm': '이 파일을 삭제하시겠습니까?',
+                'deleteFailed': '삭제 실패: ',
+                'deleteError': '파일 삭제 중 오류 발생: ',
+                'contactUs': '문의하기',
+                'yourEmail': '귀하의 이메일',
+                'messageOrFeedback': '메시지 또는 피드백',
+                'sendContact': '보내기',
+                'sending': '전송 중...',
+                'contactSuccess': '메시지가 성공적으로 전송되었습니다. 최대한 빨리 답변 드리겠습니다!',
+                'contactError': '전송 실패: ',
+                'contactServerError': '서버 오류, 나중에 다시 시도해주세요',
+                'contactFieldsRequired': '모든 필수 필드를 작성해주세요',
+                'invalidEmail': '유효한 이메일 주소를 입력해주세요',
+                'quickLinks': '빠른 링크',
+                'privacyPolicy': '개인정보 보호정책',
+                'termsOfUse': '이용약관',
+                'faq': '자주 묻는 질문',
+                'appName': '비디오 다운로더',
+                'appDescription': '간단하고 효율적인 비디오 다운로드 도구, 여러 플랫폼 지원',
+                'contactLink': '피드백 보내기',
+                'footerRights': '모든 권리 보유',
+                'popularPlatforms': '인기 플랫폼:',
+                'homeLink': '홈',
+                'privacyPolicy': '개인정보 보호정책',
+                'termsOfUse': '이용약관',
+                'faqText': '자주 묻는 질문',
+                'feedbackDesc': '질문이나 제안이 있으신가요? 의견을 듣고 싶습니다.',
+                'fileNotExist': '파일이 더 이상 존재하지 않거나 삭제되었습니다',
+                'deleting': '삭제 중',
+            }
+        };
+
+        // 在所有语言对象中添加这些新的翻译项
+        Object.keys(translations).forEach(lang => {
+            // 为每种语言添加页脚相关翻译
+            translations[lang]['appName'] = {
+                'zh': '视频下载器',
+                'en': 'Video Downloader',
+                'ja': '動画ダウンローダー',
+                'ko': '비디오 다운로더'
+            }[lang];
+            
+            translations[lang]['appDescription'] = {
+                'zh': '简单高效的视频下载工具，支持多种平台',
+                'en': 'Simple and efficient video download tool, supporting multiple platforms',
+                'ja': 'シンプルで効率的な動画ダウンロードツール、複数のプラットフォームをサポート',
+                'ko': '간단하고 효율적인 비디오 다운로드 도구, 여러 플랫폼 지원'
+            }[lang];
+            
+            translations[lang]['quickLinks'] = {
+                'zh': '快速链接',
+                'en': 'Quick Links',
+                'ja': 'クイックリンク',
+                'ko': '빠른 링크'
+            }[lang];
+            
+            translations[lang]['supportEmail'] = {
+                'zh': 'kefu6944@gmail.com',
+                'en': 'kefu6944@gmail.com',
+                'ja': 'kefu6944@gmail.com',
+                'ko': 'kefu6944@gmail.com'
+            }[lang];
+            
+            // 添加联系表单翻译
+            translations[lang]['contactUs'] = {
+                'zh': '联系我们',
+                'en': 'Contact Us',
+                'ja': 'お問い合わせ',
+                'ko': '문의하기'
+            }[lang];
+            
+            translations[lang]['yourEmail'] = {
+                'zh': '您的联系邮箱',
+                'en': 'Your contact email',
+                'ja': 'あなたのメールアドレス',
+                'ko': '귀하의 이메일'
+            }[lang];
+            
+            translations[lang]['messageOrFeedback'] = {
+                'zh': '消息或问题反馈',
+                'en': 'Message or feedback',
+                'ja': 'メッセージまたはフィードバック',
+                'ko': '메시지 또는 피드백'
+            }[lang];
+            
+            translations[lang]['sendContact'] = {
+                'zh': '发送',
+                'en': 'Send',
+                'ja': '送信',
+                'ko': '보내기'
+            }[lang];
+            
+            translations[lang]['sending'] = {
+                'zh': '发送中...',
+                'en': 'Sending...',
+                'ja': '送信中...',
+                'ko': '전송 중...'
+            }[lang];
+            
+            translations[lang]['contactSuccess'] = {
+                'zh': '消息已成功发送，我们会尽快回复您！',
+                'en': 'Message sent successfully. We will reply to you as soon as possible!',
+                'ja': 'メッセージが正常に送信されました。できるだけ早くご返信いたします！',
+                'ko': '메시지가 성공적으로 전송되었습니다. 최대한 빨리 답변 드리겠습니다!'
+            }[lang];
+            
+            translations[lang]['contactError'] = {
+                'zh': '发送失败: ',
+                'en': 'Send failed: ',
+                'ja': '送信に失敗しました: ',
+                'ko': '전송 실패: '
+            }[lang];
+            
+            translations[lang]['contactServerError'] = {
+                'zh': '服务器错误，请稍后再试',
+                'en': 'Server error, please try again later',
+                'ja': 'サーバーエラー、後でもう一度お試しください',
+                'ko': '서버 오류, 나중에 다시 시도해주세요'
+            }[lang];
+            
+            translations[lang]['contactFieldsRequired'] = {
+                'zh': '请填写所有必填字段',
+                'en': 'Please fill in all required fields',
+                'ja': '必須フィールドをすべて入力してください',
+                'ko': '모든 필수 필드를 작성해주세요'
+            }[lang];
+            
+            translations[lang]['invalidEmail'] = {
+                'zh': '请输入有效的电子邮件地址',
+                'en': 'Please enter a valid email address',
+                'ja': '有効なメールアドレスを入力してください',
+                'ko': '유효한 이메일 주소를 입력해주세요'
+            }[lang];
+            
+            // 添加页脚快速链接翻译
+            translations[lang]['homeLink'] = {
+                'zh': '首页',
+                'en': 'Home',
+                'ja': 'ホーム',
+                'ko': '홈'
+            }[lang];
+            
+            translations[lang]['privacyPolicy'] = {
+                'zh': '隐私政策',
+                'en': 'Privacy Policy',
+                'ja': 'プライバシーポリシー',
+                'ko': '개인정보 보호정책'
+            }[lang];
+            
+            translations[lang]['termsOfUse'] = {
+                'zh': '使用条款',
+                'en': 'Terms of Use',
+                'ja': '利用規約',
+                'ko': '이용약관'
+            }[lang];
+            
+            translations[lang]['faqText'] = {
+                'zh': '常见问题',
+                'en': 'FAQ',
+                'ja': 'よくある質問',
+                'ko': '자주 묻는 질문'
+            }[lang];
+            
+            translations[lang]['feedbackDesc'] = {
+                'zh': '有任何问题或建议？我们很乐意听取您的反馈。',
+                'en': 'Questions or suggestions? We\'d love to hear from you.',
+                'ja': 'ご質問やご提案がありますか？お聞かせください。',
+                'ko': '질문이나 제안이 있으신가요? 의견을 듣고 싶습니다.'
+            }[lang];
+        });
+
+        // 当前语言
+        let currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+
+        // 语言切换函数
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferredLanguage', lang);
+            
+            // 更新下拉菜单选中值
+            document.getElementById('language-select').value = lang;
+            
+            // 更新页面各元素的文本
+            document.title = translations[lang]['title'];
+            
+            // 更新页眉标题
+            document.querySelector('.logo-text').textContent = translations[lang]['appName'];
+            
+            // 更新主标题
+            document.querySelector('h1').textContent = translations[lang]['title'];
+            
+            document.querySelector('input[name="url"]').placeholder = translations[lang]['placeholder'];
+            document.querySelector('.download-btn-mp4').textContent = translations[lang]['downloadVideoBtn'];
+            document.querySelector('.download-btn-mp3').textContent = translations[lang]['downloadAudioBtn'];
+            document.querySelector('.loading').textContent = translations[lang]['downloadingMsg'];
+            
+            // 更新平台快捷方式标签
+            document.querySelector('.platform-label').textContent = translations[lang]['popularPlatforms'];
+            
+            // 更新文件列表部分
+            const filesTitle = document.querySelector('.files-container h2');
+            if (filesTitle) filesTitle.textContent = translations[lang]['filesTitle'];
+            
+            // 更新表头
+            const tableHeaders = document.querySelectorAll('.file-list th');
+            if (tableHeaders.length >= 3) {
+                tableHeaders[0].textContent = translations[lang]['fileName'];
+                tableHeaders[1].textContent = translations[lang]['fileSize'];
+                tableHeaders[2].textContent = translations[lang]['fileActions'];
+            }
+            
+            // 更新下载和删除按钮
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.textContent = translations[lang]['downloadBtn'];
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.textContent = translations[lang]['deleteBtn'];
+            });
+            
+            // 更新无文件提示
+            const noFiles = document.querySelector('.no-files');
+            if (noFiles) {
+                noFiles.textContent = translations[lang]['noFiles'];
+            }
+            
+            // 更新页脚文本
+            document.querySelector('.footer-section.about h3').textContent = translations[lang]['appName'];
+            document.querySelector('.footer-section.about p').textContent = translations[lang]['appDescription'];
+            
+            // 更新快速链接部分
+            document.getElementById('quick-links-title').textContent = translations[lang]['quickLinks'];
+            document.getElementById('home-link').textContent = translations[lang]['homeLink'];
+            document.getElementById('privacy-link').textContent = translations[lang]['privacyPolicy'];
+            document.getElementById('terms-link').textContent = translations[lang]['termsOfUse'];
+            document.getElementById('faq-link').textContent = translations[lang]['faqText'];
+            
+            // 更新反馈部分
+            document.getElementById('feedback-title').textContent = translations[lang]['contactUs'];
+            document.getElementById('feedback-desc').textContent = translations[lang]['feedbackDesc'];
+            document.getElementById('contact-us-link').textContent = translations[lang]['contactLink'];
+            
+            document.querySelector('.footer-bottom p').innerHTML = 
+                `&copy; <span id="current-year">${new Date().getFullYear()}</span> ${translations[lang]['appName']} | ${translations[lang]['footerRights']}`;
+            
+            // 更新联系表单文本
+            document.getElementById('contact-title').textContent = translations[lang]['contactUs'];
+            document.getElementById('email-label').textContent = translations[lang]['yourEmail'];
+            document.getElementById('message-label').textContent = translations[lang]['messageOrFeedback'];
+            document.getElementById('send-contact').textContent = translations[lang]['sendContact'];
+            
+            // 如果有其他需要更新的元素...
+        }
+
+        // 页面加载时初始化语言
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置下拉菜单初始值
+            document.getElementById('language-select').value = currentLang;
+            changeLanguage(currentLang);
+            
+            // 设置当前年份
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            
+            // 初始隐藏加载中文本和进度条
+            document.querySelector('.loading').style.display = 'none';
+            document.getElementById('progress-bar').style.display = 'none';
+            
+            // 平台快捷按钮事件处理
+            const platformButtons = document.querySelectorAll('.platform-btn');
+            const urlInput = document.querySelector('input[name="url"]');
+            
+            platformButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const platform = button.getAttribute('data-platform');
+                    let placeholderUrl = '';
+                    
+                    // 设置不同平台的示例URL
+                    switch(platform) {
+                        case 'youtube':
+                            placeholderUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+                            break;
+                        case 'bilibili':
+                            placeholderUrl = 'https://www.bilibili.com/video/BV1GJ411x7h7';
+                            break;
+                        case 'tiktok':
+                            placeholderUrl = 'https://www.tiktok.com/@tiktok/video/6584647400055377158';
+                            break;
+                        case 'twitter':
+                            placeholderUrl = 'https://twitter.com/Twitter/status/1580661436132757505';
+                            break;
+                    }
+                    
+                    // 将URL填入输入框并聚焦
+                    if (placeholderUrl) {
+                        urlInput.value = placeholderUrl;
+                        urlInput.focus();
+                        urlInput.select();
+                    }
+                });
+            });
+            
+            // 模态窗口控制
+            const modal = document.getElementById('contact-modal');
+            const contactLink = document.getElementById('contact-us-link');
+            const closeButton = document.querySelector('.close-modal');
+            
+            contactLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+                modal.classList.add('show');
+            });
+            
+            closeButton.addEventListener('click', function() {
+                closeModal();
+            });
+            
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            function closeModal() {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    document.body.style.overflow = 'auto'; // 恢复背景滚动
+                }, 300);
+            }
+            
+            // 按ESC键关闭模态窗口
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.classList.contains('show')) {
+                    closeModal();
+                }
+            });
+            
+            // 处理联系表单
+            document.getElementById('send-contact').addEventListener('click', function() {
+                const email = document.getElementById('contact-email-input').value.trim();
+                const message = document.getElementById('contact-message').value.trim();
+                const resultDiv = document.getElementById('contact-result');
+                
+                if (!email || !message) {
+                    resultDiv.textContent = translations[currentLang]['contactFieldsRequired'];
+                    resultDiv.className = 'contact-result contact-error';
+                    return;
+                }
+                
+                if (!validateEmail(email)) {
+                    resultDiv.textContent = translations[currentLang]['invalidEmail'];
+                    resultDiv.className = 'contact-result contact-error';
+                    return;
+                }
+                
+                // 显示发送中状态
+                this.disabled = true;
+                this.textContent = translations[currentLang]['sending'];
+                resultDiv.className = 'contact-result';
+                resultDiv.textContent = '';
+                
+                // 发送邮件到后端
+                fetch('/send_feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        message: message
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    this.disabled = false;
+                    this.textContent = translations[currentLang]['sendContact'];
+                    
+                    if (data.success) {
+                        resultDiv.textContent = translations[currentLang]['contactSuccess'];
+                        resultDiv.className = 'contact-result contact-success';
+                        // 清空表单
+                        document.getElementById('contact-email-input').value = '';
+                        document.getElementById('contact-message').value = '';
+                        
+                        // 3秒后关闭模态窗口
+                        setTimeout(() => {
+                            closeModal();
+                        }, 3000);
+                    } else {
+                        resultDiv.textContent = translations[currentLang]['contactError'] + data.message;
+                        resultDiv.className = 'contact-result contact-error';
+                    }
+                })
+                .catch(error => {
+                    this.disabled = false;
+                    this.textContent = translations[currentLang]['sendContact'];
+                    resultDiv.textContent = translations[currentLang]['contactServerError'];
+                    resultDiv.className = 'contact-result contact-error';
+                });
+            });
+            
+            // 邮箱验证函数
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+        });
+    </script>
+</body>
+</html> 

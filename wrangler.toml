@@ -1,0 +1,12 @@
+name = "video-downloader"
+type = "javascript"
+workers_dev = true
+compatibility_date = "2023-01-01"
+
+[site]
+bucket = "./dist"
+entry-point = "workers-site"
+
+[env.production]
+zone_id = "" # 需要替换为您的域名区域ID
+route = "*yourdomainname.com/*" # 替换为您的域名 
