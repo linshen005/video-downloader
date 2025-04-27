@@ -24,7 +24,7 @@
 
 1. 克隆仓库
    ```bash
-   git clone https://github.com/yourusername/video-downloader.git
+   git clone https://github.com/linshen005/video-downloader.git
    cd video-downloader
    ```
 
@@ -65,4 +65,4 @@
 
 ## 许可证
 
-本项目采用MIT许可证，详见LICENSE文件。 
+本项目采用MIT许可证，详见LICENSE文件。
