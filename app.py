@@ -124,48 +124,73 @@ def download_video():
     try:
         url = unquote(request.form['url'])
         format_type = request.form.get('format', 'mp4')
-        logger.info(f"Download request received, URL: {url}, Format: {format_type}")
+        logger.info(f"下载请求收到, URL: {url}, 格式: {format_type}")
 
         # 检查目标平台
         platform = "unknown"
         if "tiktok.com" in url:
             platform = "tiktok"
-            logger.info("Detected TikTok URL")
+            logger.info("检测到TikTok URL")
         elif "youtube.com" in url or "youtu.be" in url:
             platform = "youtube"
-            logger.info("Detected YouTube URL")
+            logger.info("检测到YouTube URL")
         elif "bilibili.com" in url:
             platform = "bilibili"
-            logger.info("Detected Bilibili URL")
+            logger.info("检测到Bilibili URL")
         
         # 确保下载目录存在
         if not os.path.exists(DOWNLOAD_FOLDER):
-            logger.info(f"Creating download directory: {DOWNLOAD_FOLDER}")
+            logger.info(f"创建下载目录: {DOWNLOAD_FOLDER}")
             os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+        
+        # 显示当前目录和下载目录
+        logger.info(f"当前工作目录: {os.getcwd()}")
+        logger.info(f"下载目录: {DOWNLOAD_FOLDER}")
+        logger.info(f"下载目录是否存在: {os.path.exists(DOWNLOAD_FOLDER)}")
+        logger.info(f"下载目录权限: {oct(os.stat(DOWNLOAD_FOLDER).st_mode)[-3:]}")
+
+        # 测试临时文件写入和读取
+        try:
+            test_file_path = os.path.join(DOWNLOAD_FOLDER, f"test_file_{int(time.time())}.txt")
+            with open(test_file_path, 'w') as f:
+                f.write('Test content')
+            logger.info(f"成功创建测试文件: {test_file_path}")
+            
+            with open(test_file_path, 'r') as f:
+                content = f.read()
+            logger.info(f"成功读取测试文件内容: {content}")
+            
+            os.remove(test_file_path)
+            logger.info(f"成功删除测试文件")
+        except Exception as e:
+            logger.error(f"测试文件操作失败: {str(e)}")
+            return jsonify({
+                'success': False,
+                'message': f'无法写入下载目录: {str(e)}'
+            })
 
         # 检查FFMPEG路径
         ffmpeg_exec = os.path.join(FFMPEG_PATH, 'ffmpeg')
-        ffprobe_exec = os.path.join(FFMPEG_PATH, 'ffprobe')
-        logger.info(f"Using FFMPEG path: {FFMPEG_PATH}")
-        logger.info(f"ffmpeg exists: {os.path.exists(ffmpeg_exec)}, ffprobe exists: {os.path.exists(ffprobe_exec)}")
+        logger.info(f"FFmpeg路径: {ffmpeg_exec}")
+        logger.info(f"FFmpeg是否存在: {os.path.exists(ffmpeg_exec)}")
         
         if not os.path.exists(ffmpeg_exec):
-            logger.error(f"FFmpeg not found at {ffmpeg_exec}")
+            logger.error(f"未找到FFmpeg: {ffmpeg_exec}")
             return jsonify({
                 'success': False,
-                'message': f'FFmpeg not found at {ffmpeg_exec}. Please check installation.'
+                'message': f'未找到FFmpeg。请检查安装。'
             })
 
         # 下载前重置进度
         with progress_lock:
             download_progress['status'] = 'downloading'
             download_progress['percent'] = '0.0%'
-            download_progress['message'] = ''
+            download_progress['message'] = '开始下载...'
 
         # 文件名处理函数
         def sanitize_filename(filename):
             if not filename:
-                return f"video_{int(time.time())}"  # 使用时间戳创建唯一文件名
+                return f"video_{int(time.time())}"
             
             # 移除非法字符
             s = re.sub(r'[\\/*?:"<>|]', "", filename)
@@ -175,159 +200,156 @@ def download_video():
             s = s.strip('. ')
             # 移除其他潜在问题字符
             s = re.sub(r'[^\w\.-]', '_', s)
-            # 确保长度不超过100个字符
-            if len(s) > 100:
-                s = s[:97] + "..."
+            # 截断长文件名
+            if len(s) > 50:  # 更短的长度限制
+                s = s[:47] + "..."
             # 如果文件名为空，使用时间戳
             return s if s else f"video_{int(time.time())}"
 
-        # 生成唯一的输出文件路径
+        # 生成唯一的时间戳
         timestamp = int(time.time())
+        
+        # 使用绝对路径
         output_dir = os.path.abspath(DOWNLOAD_FOLDER)
-        logger.info(f"Download directory (absolute path): {output_dir}")
+        logger.info(f"下载目录(绝对路径): {output_dir}")
         
-        # 测试目录是否可写
-        try:
-            test_file = os.path.join(output_dir, f"test_{timestamp}.txt")
-            with open(test_file, 'w') as f:
-                f.write('test')
-            os.remove(test_file)
-            logger.info(f"Directory {output_dir} is writable")
-        except Exception as e:
-            logger.error(f"Directory {output_dir} is not writable: {str(e)}")
-            return jsonify({
-                'success': False,
-                'message': f'Download directory is not writable: {str(e)}'
-            })
-            
-        safe_output_template = os.path.join(output_dir, f"%(title)s_{timestamp}.%(ext)s")
-        
-        # 记录使用的输出模板
-        logger.info(f"Using output template: {safe_output_template}")
-
-        base_opts = {
-            'quiet': False,
-            'no_warnings': False,
-            'outtmpl': safe_output_template,
-            'ffmpeg_location': FFMPEG_PATH,
-            'progress_hooks': [progress_hook],
-            'ignoreerrors': True,  # 忽略一些非关键错误
-            'verbose': True,       # 启用详细日志
-        }
-        
-        # 特殊平台处理
+        # 对于TikTok视频，使用更简单的文件名
+        filename_base = f"video_{timestamp}"
         if platform == "tiktok":
-            # TikTok 需要特殊处理，使用唯一文件名避免问题
-            unique_filename = f"tiktok_video_{timestamp}"
-            direct_output = os.path.join(output_dir, f"{unique_filename}.mp4")
-            base_opts['outtmpl'] = direct_output
-            logger.info(f"TikTok video, using direct output: {direct_output}")
-
-        if format_type == 'mp3':
+            filename_base = f"tiktok_{timestamp}"
+        elif platform == "youtube":
+            filename_base = f"youtube_{timestamp}"
+        elif platform == "bilibili":
+            filename_base = f"bilibili_{timestamp}"
+            
+        # 确定最终文件名
+        final_filename = f"{filename_base}.{format_type}"
+        output_file = os.path.join(output_dir, final_filename)
+        logger.info(f"输出文件: {output_file}")
+        
+        # 使用临时目录下载
+        with tempfile.TemporaryDirectory() as temp_dir:
+            logger.info(f"创建临时目录: {temp_dir}")
+            
+            # 设置临时输出路径
+            temp_output = os.path.join(temp_dir, f"temp_output.{format_type}")
+            logger.info(f"临时输出文件: {temp_output}")
+            
+            # 配置yt-dlp选项
             ydl_opts = {
-                **base_opts,
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
+                'quiet': False,
+                'no_warnings': False,
+                'outtmpl': temp_output,
+                'ffmpeg_location': FFMPEG_PATH,
+                'progress_hooks': [progress_hook],
+                'verbose': True,
             }
-            logger.info("Using MP3 audio format options")
-        else:
-            ydl_opts = {
-                **base_opts,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            }
-            logger.info("Using MP4 video format options")
-
-        # 下载视频
-        video_title = f"video_{timestamp}"  # 默认标题
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                logger.info(f"Starting download with yt-dlp: {url}")
-                info = ydl.extract_info(url, download=False)
-                if info:
-                    video_title = info.get('title', video_title)
-                    logger.info(f"Video title: {video_title}")
-                    # 清理文件名
-                    safe_title = sanitize_filename(video_title)
-                    logger.info(f"Sanitized title: {safe_title}")
-                    
-                    # 更新输出模板使用安全的文件名
-                    if format_type == 'mp3':
-                        ydl_opts['outtmpl'] = os.path.join(output_dir, f"{safe_title}_{timestamp}.%(ext)s")
-                        logger.info(f"Updated output template for MP3: {ydl_opts['outtmpl']}")
-                    elif platform != "tiktok":  # TikTok已经有特殊处理
-                        ydl_opts['outtmpl'] = os.path.join(output_dir, f"{safe_title}_{timestamp}.%(ext)s")
-                        logger.info(f"Updated output template for MP4: {ydl_opts['outtmpl']}")
-                    
-                    # 执行实际下载
-                    logger.info("Starting actual download...")
-                    ydl = yt_dlp.YoutubeDL(ydl_opts)
-                    ydl.download([url])
-                    
-                    # 检查下载后文件是否存在
-                    expected_files = []
-                    if format_type == 'mp3':
-                        expected_files.append(os.path.join(output_dir, f"{safe_title}_{timestamp}.mp3"))
-                    elif platform == "tiktok":
-                        expected_files.append(direct_output)
+            
+            if format_type == 'mp3':
+                ydl_opts.update({
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '192',
+                    }],
+                })
+                # 对于mp3，修改临时输出路径
+                temp_output = os.path.join(temp_dir, "temp_output.mp3")
+                logger.info(f"修正的MP3临时输出: {temp_output}")
+            else:
+                ydl_opts.update({
+                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                })
+            
+            try:
+                # 下载视频
+                logger.info(f"开始下载: {url}")
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info_dict = ydl.extract_info(url, download=True)
+                    if info_dict:
+                        # 提取视频标题
+                        original_title = info_dict.get('title', filename_base)
+                        logger.info(f"视频标题: {original_title}")
+                        safe_title = sanitize_filename(original_title)
+                        logger.info(f"安全的标题: {safe_title}")
+                        
+                        # 更新最终文件名
+                        final_filename = f"{safe_title}.{format_type}"
+                        output_file = os.path.join(output_dir, final_filename)
+                        
+                        # 检查临时文件是否存在
+                        if not os.path.exists(temp_output):
+                            actual_temp_file = None
+                            # 查找实际下载的文件
+                            for file in os.listdir(temp_dir):
+                                logger.info(f"临时目录中的文件: {file}")
+                                if os.path.isfile(os.path.join(temp_dir, file)):
+                                    actual_temp_file = os.path.join(temp_dir, file)
+                                    break
+                            
+                            if actual_temp_file:
+                                logger.info(f"找到实际下载的文件: {actual_temp_file}")
+                                temp_output = actual_temp_file
+                            else:
+                                raise Exception("下载失败，临时目录中未找到文件")
+                        
+                        # 检查文件大小
+                        file_size = os.path.getsize(temp_output)
+                        logger.info(f"下载的文件大小: {file_size/1024/1024:.2f} MB")
+                        
+                        if file_size == 0:
+                            raise Exception("下载的文件大小为0")
+                        
+                        # 确保输出目录存在
+                        os.makedirs(output_dir, exist_ok=True)
+                        
+                        # 将文件复制到最终位置
+                        logger.info(f"将文件从 {temp_output} 复制到 {output_file}")
+                        with open(temp_output, 'rb') as src_file:
+                            with open(output_file, 'wb') as dest_file:
+                                dest_file.write(src_file.read())
+                        
+                        # 验证最终文件存在
+                        if os.path.exists(output_file):
+                            logger.info(f"成功创建最终文件: {output_file}")
+                            final_size = os.path.getsize(output_file)
+                            logger.info(f"最终文件大小: {final_size/1024/1024:.2f} MB")
+                            
+                            with progress_lock:
+                                download_progress['status'] = 'finished'
+                                download_progress['percent'] = '100.0%'
+                                download_progress['message'] = f'下载完成: {safe_title}'
+                            
+                            return jsonify({
+                                'success': True,
+                                'message': f'下载成功: {safe_title}',
+                                'file': {
+                                    'name': final_filename,
+                                    'size': f"{final_size/1024/1024:.2f} MB"
+                                }
+                            })
+                        else:
+                            raise Exception(f"无法创建最终文件: {output_file}")
                     else:
-                        expected_files.append(os.path.join(output_dir, f"{safe_title}_{timestamp}.mp4"))
-                    
-                    # 还可以检查输出目录中是否有新文件
-                    new_files = []
-                    for filename in os.listdir(output_dir):
-                        if str(timestamp) in filename:
-                            file_path = os.path.join(output_dir, filename)
-                            if os.path.isfile(file_path):
-                                new_files.append(file_path)
-                                logger.info(f"Found downloaded file: {file_path}")
-                    
-                    if new_files:
-                        with progress_lock:
-                            download_progress['status'] = 'finished'
-                            download_progress['percent'] = '100.0%'
-                            download_progress['message'] = f'Downloaded: {safe_title}'
-                        return jsonify({
-                            'success': True,
-                            'message': f'Video "{safe_title}" downloaded successfully'
-                        })
-                    else:
-                        logger.error(f"No files found in {output_dir} after download. Expected files: {expected_files}")
-                        # 列出目录内容
-                        logger.error(f"Directory contents: {os.listdir(output_dir)}")
-                        with progress_lock:
-                            download_progress['status'] = 'error'
-                            download_progress['message'] = 'Download failed: No files found after download'
-                        return jsonify({
-                            'success': False,
-                            'message': 'Download failed: No files found after download'
-                        })
-                else:
-                    logger.error("Failed to extract video info")
-                    with progress_lock:
-                        download_progress['status'] = 'error'
-                        download_progress['message'] = 'Failed to extract video info'
-                    return jsonify({
-                        'success': False,
-                        'message': 'Failed to extract video info'
-                    })
-        except Exception as e:
-            logger.error(f"Error during download: {str(e)}")
-            with progress_lock:
-                download_progress['status'] = 'error'
-                download_progress['message'] = f'Download error: {str(e)}'
-            return jsonify({
-                'success': False,
-                'message': f'Download error: {str(e)}'
-            })
+                        raise Exception("无法获取视频信息")
+            except Exception as e:
+                logger.error(f"下载过程中出错: {str(e)}")
+                with progress_lock:
+                    download_progress['status'] = 'error'
+                    download_progress['message'] = f'下载错误: {str(e)}'
+                return jsonify({
+                    'success': False,
+                    'message': f'下载错误: {str(e)}'
+                })
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"意外错误: {str(e)}")
+        with progress_lock:
+            download_progress['status'] = 'error'
+            download_progress['message'] = f'下载错误: {str(e)}'
         return jsonify({
             'success': False,
-            'message': f'Unexpected error: {str(e)}'
+            'message': f'意外错误: {str(e)}'
         })
 
 @app.route('/progress')
